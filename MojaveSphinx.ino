@@ -22,14 +22,14 @@ const double OFFSET_LC = 21503;
 HX711 scale;
 
 // Pressure Tranducers
-const int PT_TC_PIN = A1;
-const int PT_OX_PIN = A0;
+const int PT_TC_PIN = A5; // Thrust Chamber Pressure Transducer
+const int PT_OX_PIN = A0;// Thrust Chamber Pressure Transducer
 
 const double SCALE_TC = 1.2195;
 const double OFFSET_TC = - 121.95;
 
-const int SCALE_OX = 1;
-const int OFFSET_OX = 0;
+const double SCALE_OX = 1.8061674;
+const double OFFSET_OX = -180.62;
 
 double getPressureTC (double reading) {
   return reading * SCALE_TC + OFFSET_TC;
@@ -90,7 +90,7 @@ void loop() {
   //delay(0);
   
   // Beeper Intervals
-  if (currTime - prevTime >= beepPeriod) {
+  if (currTime - prevTime >= beepPeriod && getPressureOX(analogRead(PT_OX_PIN)) < 50) {
     digitalWrite(BEEPER_PIN, HIGH);
     prevTime = currTime;
     currBeepState = 1;
