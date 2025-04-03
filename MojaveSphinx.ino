@@ -15,11 +15,14 @@ int currBeepState = 0;
 // Load Cell with HX711 breakout board
 const int LOADCELL_DOUT_PIN = 2;
 const int LOADCELL_SCK_PIN = 3;
-
-const double SCALE_LC = -22.19238;
-const double OFFSET_LC = 21503;
+const double SCALE_LC = -0.0000976857;
+const double OFFSET_LC = -0.489433;
 
 HX711 scale;
+
+// Circular array for a three-value median filter for the LC
+static double readings[3] = {0, 0, 0};
+static int index = 0;
 
 // Pressure Tranducers
 const int PT_TC_PIN = A5; // Thrust Chamber Pressure Transducer
@@ -36,8 +39,23 @@ double getPressureTC (double reading) {
 } 
 
 double getPressureOX (double reading) {
-return reading * SCALE_OX + OFFSET_OX;
+  return reading * SCALE_OX + OFFSET_OX;
 } 
+
+double getForce () {
+  // Read from the load cell
+  readings[index] = scale.read() * SCALE_LC + OFFSET_LC;
+  index = (index + 1) % 3;
+
+  // Get the median force value (to remove outliers)
+  if ((readings[0] <= readings[1] && readings[1] <= readings[2]) || (readings[2] <= readings[1] && readings[1] <= readings[0])) {
+    return readings[1];
+  } else if ((readings[1] <= readings[0] && readings[0] <= readings[2]) || (readings[2] <= readings[0] && readings[0] <= readings[1])) {
+    return readings[0];
+  } else {
+    return readings[2];
+  }
+}
 
 // SD card file
 File myFile;
@@ -80,7 +98,7 @@ void loop() {
   myFile = SD.open("data.txt", FILE_WRITE);
   myFile.print(currTime);
   myFile.print(",");
-  myFile.print(scale.get_units(1), 3);
+  myFile.print(getForce());
   myFile.print(",");
   myFile.print(getPressureTC(analogRead(PT_TC_PIN)));
   myFile.print(",");
