@@ -34,12 +34,12 @@ const double OFFSET_TC = - 121.95;
 const double SCALE_OX = 1.8061674;
 const double OFFSET_OX = -180.62;
 
-double getPressureTC (double reading) {
-  return reading * SCALE_TC + OFFSET_TC;
+double getPressureTC () {
+  return analogRead(PT_TC_PIN) * SCALE_TC + OFFSET_TC;
 } 
 
-double getPressureOX (double reading) {
-  return reading * SCALE_OX + OFFSET_OX;
+double getPressureOX () {
+  return analogRead(PT_OX_PIN) * SCALE_OX + OFFSET_OX;
 } 
 
 double getForce () {
@@ -58,7 +58,8 @@ double getForce () {
 }
 
 // SD card file
-File myFile;
+File dataFile;
+String filename = "data.txt";
 
 void setup() {
   // Pressure Transducers
@@ -79,15 +80,22 @@ void setup() {
     while (1);
   }
 
+  // Get unique filename
+  int fileIndex = 1;
+  
+  while (SD.exists(filename)) {
+    filename = "data" + String(fileIndex++) + ".txt";
+  }
+  
   // Open file
-  myFile = SD.open("data.txt", FILE_WRITE);
-  if (!myFile) {
+  dataFile = SD.open(filename, FILE_WRITE);
+  if (!dataFile) {
     // if there was an error loop forever
     while (1); 
   }
   // Write header to file
-  myFile.println("Time(ms), LoadCell(g), TCPressure(psi), OXPressure(psi)");
-  myFile.close();
+  dataFile.println("Time(ms), LoadCell(g), TCPressure(psi), OXPressure(psi)");
+  dataFile.close();
 }
 
 void loop() {
@@ -95,20 +103,20 @@ void loop() {
   unsigned long currTime = millis();
 
   // Make sensor readings and write to file
-  myFile = SD.open("data.txt", FILE_WRITE);
-  myFile.print(currTime);
-  myFile.print(",");
-  myFile.print(getForce());
-  myFile.print(",");
-  myFile.print(getPressureTC(analogRead(PT_TC_PIN)));
-  myFile.print(",");
-  myFile.println(getPressureOX(analogRead(PT_OX_PIN)));
-  myFile.close();
+  dataFile = SD.open(filename, FILE_WRITE);
+  dataFile.print(currTime);
+  dataFile.print(",");
+  dataFile.print(getForce());
+  dataFile.print(",");
+  dataFile.print(getPressureTC());
+  dataFile.print(",");
+  dataFile.println(getPressureOX());
+  dataFile.close();
   // Loop as fast as we can
   //delay(0);
   
-  // Beeper Intervals
-  if (currTime - prevTime >= beepPeriod && getPressureOX(analogRead(PT_OX_PIN)) < 50) {
+  // Beeper Intervals (only beep at low pressure)
+  if (currTime - prevTime >= beepPeriod && getPressureOX() < 50) {
     digitalWrite(BEEPER_PIN, HIGH);
     prevTime = currTime;
     currBeepState = 1;
