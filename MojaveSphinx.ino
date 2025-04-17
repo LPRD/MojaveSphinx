@@ -80,6 +80,9 @@ void setup() {
     while (1);
   }
 
+  // Initialize the ethernet library
+  ethernet_setup();
+
   // Get unique filename
   int fileIndex = 1;
   
@@ -102,16 +105,23 @@ void loop() {
   // Sets up millis
   unsigned long currTime = millis();
 
-  // Make sensor readings and write to file
+  // Make sensor readings and put into a String
+  String data = String(currTime);
+  data +=",";
+  data += getForce();
+  data += ",";
+  data += getPressureTC();
+  data += ",";
+  data += getPressureOX();
+
+  // Write the data to the SD card
   dataFile = SD.open(filename, FILE_WRITE);
-  dataFile.print(currTime);
-  dataFile.print(",");
-  dataFile.print(getForce());
-  dataFile.print(",");
-  dataFile.print(getPressureTC());
-  dataFile.print(",");
-  dataFile.println(getPressureOX());
+  dataFile.println(data);
   dataFile.close();
+
+  // Send the data over the ethernet
+  ethernet_send(data);
+
   // Loop as fast as we can
   //delay(0);
   
