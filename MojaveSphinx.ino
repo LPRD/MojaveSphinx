@@ -13,8 +13,8 @@ unsigned long prevTime = 0;
 int currBeepState = 0;
 
 // Load Cell with HX711 breakout board
-const int LOADCELL_DOUT_PIN = 2;
-const int LOADCELL_SCK_PIN = 3;
+const int LOADCELL_DOUT_PIN = 25;
+const int LOADCELL_SCK_PIN = 24;
 const double SCALE_LC = -0.0000975808;
 const double OFFSET_LC = 0.71636;
 
