@@ -2,7 +2,6 @@
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 
-
 // UDP instance
 EthernetUDP Udp;
 
@@ -21,7 +20,9 @@ void ethernet_setup() {
 
 void ethernet_send(String message) {
   // Send a message via UDP
-  Udp.beginPacket(remoteIp, remotePort);
-  Udp.print(message);
-  Udp.endPacket();
+  if (Ethernet.linkStatus()==LinkON) {
+    Udp.beginPacket(remoteIp, remotePort);
+    Udp.print(message);
+    Udp.endPacket();
+  }
 }
