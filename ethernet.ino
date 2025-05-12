@@ -18,8 +18,9 @@ void ethernet_setup() {
   Udp.begin(localPort);
 }
 
+// Send a message via UDP
 void ethernet_send(String message) {
-  // Send a message via UDP
+  // Check the network status before sending
   if (Ethernet.linkStatus()==LinkON) {
     Udp.beginPacket(remoteIp, remotePort);
     Udp.print(message);

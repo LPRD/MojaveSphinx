@@ -1,7 +1,6 @@
 import socket
-from threading import Thread
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+import os
+from datetime import datetime
 
 # UDP Configuration
 UDP_IP = "192.168.1.2"  # Your computer's IP
@@ -12,63 +11,34 @@ sock.bind((UDP_IP, UDP_PORT))
 
 print(f"Listening on {UDP_IP}:{UDP_PORT}")
 
-# Data storage for plotting
-time_data = []
-lc_data = []
-tc_data = []
-ox_data = []
+# Create a new file with a unique name
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+filename = f"udp_data_{timestamp}.txt"
 
-# Plot setup
-plt.style.use('seaborn')
-fig, ax = plt.subplots()
-ax.set_title("Real-Time Sensor Data")
-ax.set_xlabel("Time (ms)")
-ax.set_ylabel("Values")
+# Ensure the file is created in the current directory
+filepath = os.path.join(os.getcwd(), filename)
 
-# Function to update the plot
-def update(frame):
-    try:
-        # Clear and redraw the plot
-        ax.clear()
-        ax.plot(time_data, lc_data, label="Load Cell (LC)")
-        ax.plot(time_data, tc_data, label="TC Pressure")
-        ax.plot(time_data, ox_data, label="OX Pressure")
-        ax.legend()
-        ax.set_title("Real-Time Sensor Data")
-        ax.set_xlabel("Time (ms)")
-        ax.set_ylabel("Values")
-    except Exception as e:
-        print(f"Error: {e}")
+print(f"Writing data to {filepath}")
 
 def read_network_data():
-    while True:
-        # Receive data
-        data, addr = sock.recvfrom(1024)
-        message = data.decode()
-        print(f"Received message: {message} from {addr}")
+    with open(filepath, "w") as file:
+        while True:
+            # Receive data
+            data, addr = sock.recvfrom(1024)
+            message = data.decode()
 
-        # Parse the data
-        parts = message.split(",")
-        time = float(parts[0])
-        lc = float(parts[1])
-        tc = float(parts[2])
-        ox = float(parts[3])
+            # Parse the data
+            parts = message.split(",")
+            time = float(parts[0])
+            lc = float(parts[1])
+            tc = float(parts[2])
+            ox = float(parts[3])
 
-        # Append to data lists
-        time_data.append(time)
-        lc_data.append(lc)
-        tc_data.append(tc)
-        ox_data.append(ox)
+            # Write the data to the file
+            file.write(f"{time}, {lc}, {tc}, {ox}\n")
+            file.flush()  # Ensure data is written to the file immediately
 
-        # Keep only the last 100 data points for better performance
-        if len(time_data) > 100:
-            time_data.pop(0)
-            lc_data.pop(0)
-            tc_data.pop(0)
-            ox_data.pop(0)
+            # Print the data to the console
+            print(f"{time} Load Cell: {lc} Thrust Chamber: {tc} Oxidizer: {ox}")
 
-Thread(target=read_network_data).start()
-
-# Animate the plot
-ani = FuncAnimation(fig, update, interval=100)  # Update every 100ms
-plt.show()
+read_network_data()
