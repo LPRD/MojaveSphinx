@@ -17,6 +17,7 @@ const int LOADCELL_DOUT_PIN = 25;
 const int LOADCELL_SCK_PIN = 24;
 const double SCALE_LC = -0.0000975808;
 const double OFFSET_LC = 0.71636;
+double currentForce = 0.0;
 
 HX711 scale;
 
@@ -57,9 +58,17 @@ double getForce () {
   }
 }
 
+double getForceNonblocking () {
+  if (scale.is_ready()) {
+    currentForce = getForce();
+  }
+  return currentForce;
+}
+
 // SD card file
 File dataFile;
 String filename = "data.txt";
+long lastFlush = 0;
 
 void setup() {
   // Pressure Transducers
@@ -98,7 +107,6 @@ void setup() {
   }
   // Write header to file
   dataFile.println("Time(ms), LoadCell(g), TCPressure(psi), OXPressure(psi)");
-  dataFile.close();
 }
 
 void loop() {
@@ -108,16 +116,19 @@ void loop() {
   // Make sensor readings and put into a String
   String data = String(currTime);
   data +=",";
-  data += getForce();
+  data += getForceNonblocking();
   data += ",";
   data += getPressureTC();
   data += ",";
   data += getPressureOX();
 
   // Write the data to the SD card
-  dataFile = SD.open(filename, FILE_WRITE);
   dataFile.println(data);
-  dataFile.close();
+  // Periodically flush the SD card. (takes 5+ ms)
+  if (currTime - lastFlush > 5000){
+    dataFile.flush();
+    lastFlush = currTime;
+  }
 
   // Send the data over the ethernet
   ethernet_send(data);
